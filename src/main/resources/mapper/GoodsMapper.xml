@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ltd.newbee.mall.dao.GoodsMapper">
+
+    <resultMap id="BaseResultMap" type="ltd.newbee.mall.entity.Goods">
+        <id column="goods_id" property="goodsId"/>
+        <result column="goods_name" property="goodsName"/>
+        <result column="goods_intro" property="goodsIntro"/>
+        <result column="goods_category_id" property="goodsCategoryId"/>
+        <result column="goods_cover_img" property="goodsCoverImg"/>
+        <result column="goods_carousel" property="goodsCarousel"/>
+        <result column="goods_detail_content" property="goodsDetailContent"/>
+        <result column="original_price" property="originalPrice"/>
+        <result column="selling_price" property="sellingPrice"/>
+        <result column="stock_num" property="stockNum"/>
+        <result column="tag" property="tag"/>
+        <result column="goods_sell_status" property="goodsSellStatus"/>
+        <result column="create_user" property="createUser"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user" property="updateUser"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <resultMap extends="BaseResultMap" id="ResultMapWithBLOBs" type="ltd.newbee.mall.entity.Goods">
+        <result column="goods_detail_content" jdbcType="LONGVARCHAR" property="goodsDetailContent"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        goods_id, goods_name, goods_intro, goods_category_id, goods_cover_img, goods_carousel, goods_detail_content, original_price, selling_price, stock_num, tag, goods_sell_status, create_user, create_time, update_user, update_time
+    </sql>
+
+    <sql id="Blob_Column_List">
+        goods_detail_content
+    </sql>
+    <update id="batchUpdateSellStatus">
+        update tb_newbee_mall_goods_info
+        set goods_sell_status=#{sellStatus},update_time=now() where goods_id in
+        <foreach item="id" collection="orderIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <update id="updateStockNum">
+        <foreach collection="stockNumDTOS" item="stockNumDTO">
+            update tb_newbee_mall_goods_info set stock_num = stock_num-#{stockNumDTO.goodsCount}
+            where goods_id = #{stockNumDTO.goodsId} and stock_num>=#{stockNumDTO.goodsCount} and goods_sell_status = 0;
+        </foreach>
+    </update>
+
+    <select id="findGoodsList"  parameterType="Map" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from tb_newbee_mall_goods_info
+        <where>
+            <if test="goodsName!=null and goodsName!=''">
+                and goods_name like CONCAT('%','#{goodsName}','%')
+            </if>
+            <if test="goodsSellStatus!=null and goodsSellStatus!=''">
+                and goods_sell_status = #{goodsSellStatus}
+            </if>
+            <if test="startTime != null and startTime.trim() != ''">
+                and create_time &gt; #{startTime}
+            </if>
+            <if test="endTime != null and endTime.trim() != ''">
+                and create_time &lt; #{endTime}
+            </if>
+        </where>
+        order by goods_id desc
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+    <select id="getTotalGoods" resultType="java.lang.Integer">
+        select count(*) from tb_newbee_mall_goods_info
+<!--        <where>-->
+<!--            <if test="goodsName!=null and goodsName!=''">-->
+<!--                and goods_name like CONCAT('%','#{goodsName}','%')-->
+<!--            </if>-->
+<!--            <if test="goodsSellStatus!=null and goodsSellStatus!=''">-->
+<!--                and goods_sell_status = #{goodsSellStatus}-->
+<!--            </if>-->
+<!--            <if test="startTime != null and startTime.trim() != ''">-->
+<!--                and create_time &gt; #{startTime}-->
+<!--            </if>-->
+<!--            <if test="endTime != null and endTime.trim() != ''">-->
+<!--                and create_time &lt; #{endTime}-->
+<!--            </if>-->
+<!--        </where>-->
+    </select>
+    <select id="selectByPrimaryKeys" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from tb_newbee_mall_goods_info
+        where goods_id in
+        <foreach item="id" collection="list" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        order by field(goods_id,
+        <foreach item="id" collection="list" separator=",">
+            #{id}
+        </foreach>
+        );
+    </select>
+
+    <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="ResultMapWithBLOBs">
+        select
+        <include refid="Base_Column_List"/>
+        ,
+        <include refid="Blob_Column_List"/>
+        from tb_newbee_mall_goods_info
+        where goods_id = #{goodsId,jdbcType=BIGINT}
+    </select>
+    <select id="findGoodsListBySearch" parameterType="Map" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from tb_newbee_mall_goods_info
+        <where>
+            <if test="keyword!=null and keyword!=''">
+                and (goods_name like CONCAT('%',#{keyword},'%') or goods_intro like CONCAT('%',#{keyword},'%'))
+            </if>
+            <if test="goodsCategoryId!=null and goodsCategoryId!=''">
+                and goods_category_id = #{goodsCategoryId}
+            </if>
+            <if test="goodsSellStatus!=null">
+                and goods_sell_status = #{goodsSellStatus}
+            </if>
+        </where>
+        <if test="orderBy!=null and orderBy!=''">
+            <choose>
+                <when test="orderBy == 'new'">
+                    <!-- 按照发布时间倒序排列 -->
+                    order by goods_id desc
+                </when>
+                <when test="orderBy == 'price'">
+                    <!-- 按照售价从小到大排列 -->
+                    order by selling_price asc
+                </when>
+                <otherwise>
+                    <!-- 默认按照库存数量从大到小排列 -->
+                    order by stock_num desc
+                </otherwise>
+            </choose>
+        </if>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
+    <select id="getTotalGoodsBySearch" parameterType="Map" resultType="int">
+        select count(*) from tb_newbee_mall_goods_info
+        <where>
+            <if test="keyword!=null and keyword!=''">
+                and (goods_name like CONCAT('%',#{keyword},'%') or goods_intro like CONCAT('%',#{keyword},'%'))
+            </if>
+            <if test="goodsCategoryId!=null and goodsCategoryId!=''">
+                and goods_category_id = #{goodsCategoryId}
+            </if>
+            <if test="goodsSellStatus!=null">
+                and goods_sell_status = #{goodsSellStatus}
+            </if>
+        </where>
+    </select>
+
+
+</mapper>

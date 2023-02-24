@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ltd.newbee.mall.dao.CarouselMapper">
+    <resultMap id="BaseResultMap" type="ltd.newbee.mall.entity.Carousel">
+        <id column="carousel_id" property="carouselId"/>
+        <result column="carousel_url" property="carouselUrl"/>
+        <result column="redirect_url" property="redirectUrl"/>
+        <result column="carousel_rank" property="carouselRank"/>
+        <result column="is_deleted" property="isDeleted"/>
+        <result column="create_time" property="createTime"/>
+        <result column="create_user" property="createUser"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="update_user" property="updateUser"/>
+    </resultMap>
+
+<!--    sql片段-->
+    <sql id="Base_Column_List">
+        carousel_id, carousel_url, redirect_url, carousel_rank, is_deleted, create_time, create_user, update_time, update_user
+    </sql>
+
+
+
+    <!--    查询分页数据-->
+    <select id="findCarouselList" parameterType="Map" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from tb_newbee_mall_carousel
+        where is_deleted = 0
+        order by carousel_rank desc
+        <if test="start != null and limit != null">
+            limit #{start}, #{limit}
+        </if>
+    </select>
+
+    <select id="getTotalCarousels" parameterType="Map" resultType="int">
+        select
+        count(*)
+        from tb_newbee_mall_carousel
+        where is_deleted = 0
+    </select>
+
+
+    <!--    轮播图新增-->
+    <insert id="insertSelective" parameterType="ltd.newbee.mall.entity.Carousel">
+        insert into tb_newbee_mall_carousel
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="carouselId != null">
+                carousel_id,
+            </if>
+            <if test="carouselUrl != null">
+                carousel_url,
+            </if>
+            <if test="redirectUrl != null">
+                redirect_url,
+            </if>
+            <if test="carouselRank != null">
+                carousel_rank,
+            </if>
+            <if test="isDeleted != null">
+                is_deleted,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="createUser != null">
+                create_user,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="updateUser != null">
+                update_user,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="carouselId != null">
+                #{carouselId},
+            </if>
+            <if test="carouselUrl != null">
+                #{carouselUrl},
+            </if>
+            <if test="redirectUrl != null">
+                #{redirectUrl},
+            </if>
+            <if test="carouselRank != null">
+                #{carouselRank},
+            </if>
+            <if test="isDeleted != null">
+                #{isDeleted},
+            </if>
+            <if test="createTime != null">
+                #{createTime},
+            </if>
+            <if test="createUser != null">
+                #{createUser},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime},
+            </if>
+            <if test="updateUser != null">
+                #{updateUser},
+            </if>
+        </trim>
+    </insert>
+
+<!--    轮播图修改-->
+    <update id="updateByPrimaryKeySelective" parameterType="ltd.newbee.mall.entity.Carousel">
+        update tb_newbee_mall_carousel
+        <set>
+            <if test="carouselUrl != null">
+                carousel_url = #{carouselUrl},
+            </if>
+            <if test="redirectUrl != null">
+                redirect_url = #{redirectUrl},
+            </if>
+            <if test="carouselRank != null">
+                carousel_rank = #{carouselRank},
+            </if>
+            <if test="isDeleted != null">
+                is_deleted = #{isDeleted},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="createUser != null">
+                create_user = #{createUser},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="updateUser != null">
+                update_user = #{updateUser},
+            </if>
+        </set>
+        where carousel_id = #{carouselId}
+    </update>
+
+<!--    轮播图详情-->
+    <select id="selectByPrimaryKey" resultType="integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from tb_newbee_mall_carousel
+        where carousel_id = #{carouselId}
+    </select>
+
+    <!--    删除轮播图-->
+    <update id="deleteBatch">
+        update tb_newbee_mall_carousel
+        set is_deleted = 1, update_time = now()
+        where carousel_id in
+        <foreach collection="array" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="findCarouselsByNum" parameterType="int" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from tb_newbee_mall_carousel
+        where is_deleted = 0
+        order by carousel_rank desc
+        limit #{number}
+    </select>
+</mapper>
